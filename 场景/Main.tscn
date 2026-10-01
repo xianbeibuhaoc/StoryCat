@@ -67,8 +67,16 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.831, 0.631, 0.353, 1)
 theme_override_font_sizes/font_size = 14
-text = "规定结局"
+text = "终点"
 vertical_alignment = 2
+
+[node name="条件行" type="Label" parent="外/主列" unique_id=740211883]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.58, 0.66, 1)
+theme_override_font_sizes/font_size = 14
+text = "终点三样"
+autowrap_mode = 3
 
 [node name="观众区" type="HBoxContainer" parent="外/主列" unique_id=1251811850]
 unique_name_in_owner = true
@@ -105,11 +113,16 @@ theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
 theme_override_font_sizes/font_size = 13
 text = "锚点"
 
-[node name="正史文本" type="Label" parent="外/主列/故事框/故事列" unique_id=1395127687]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 70)
-custom_maximum_size = Vector2(1280, 70)
+[node name="故事滚动" type="ScrollContainer" parent="外/主列/故事框/故事列" unique_id=1395127687]
+custom_minimum_size = Vector2(0, 90)
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="正史文本" type="Label" parent="外/主列/故事框/故事列/故事滚动" unique_id=17352419]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 16
 text = "（还没有人开口。）"

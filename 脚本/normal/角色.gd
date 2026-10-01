@@ -17,7 +17,7 @@ signal 被点击(id: String)
 @export_range(0.0, 1.0) var 未选中透明: float = 0.32
 
 @onready var _名字: Label = %名字
-@onready var _性格: Label = %性格
+@onready var _采纳数: Label = %采纳数
 @onready var _文本: RichTextLabel = %文本
 @onready var _点击层: Button = %点击层
 
@@ -47,14 +47,19 @@ func _ready() -> void:
 
 
 # ============================================================ 对外接口
-## 填入一位观众 + 他这一幕给出的文本。
-func 设置内容(观众: Dictionary, 正文: String) -> void:
+## 填入一位观众 + 他这一幕给出的文本 + 他此前被采纳过几次。
+func 设置内容(观众: Dictionary, 正文: String, 采纳次数: int = 0) -> void:
 	id = str(观众.get("id", ""))
 	_强调色 = Color(str(观众.get("色", "#ffffff")))
 	_名字.text = str(观众.get("名字", "?"))
 	_名字.add_theme_color_override("font_color", _强调色)
-	_性格.text = str(观众.get("性格", ""))
 	_文本.text = 正文
+	设置采纳数(采纳次数)
+
+
+## 单刷计数显示。结算时会再调一次——因为本幕的提交发生在进入结算之后。
+func 设置采纳数(次数: int) -> void:
+	_采纳数.text = "" if 次数 <= 0 else "已采纳 %d" % 次数
 
 
 ## 采纳 / 未采纳的视觉状态。未采纳的整张卡变暗。
