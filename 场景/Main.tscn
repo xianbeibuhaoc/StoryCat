@@ -1,0 +1,145 @@
+[gd_scene format=3 uid="uid://0eq2oecc1kax"]
+
+[ext_resource type="Script" uid="uid://bm77m5fjfqmt8" path="res://脚本/系统/游戏控制.gd" id="1_main"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_story"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+bg_color = Color(1, 1, 1, 0.045)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="Main" type="Control" unique_id=110551652]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="背景" type="ColorRect" parent="." unique_id=348975969]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.071, 0.063, 0.086, 1)
+
+[node name="外" type="MarginContainer" parent="." unique_id=1152933786]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 26
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 26
+
+[node name="主列" type="VBoxContainer" parent="外" unique_id=1065114931]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="顶栏" type="HBoxContainer" parent="外/主列" unique_id=531066269]
+layout_mode = 2
+
+[node name="幕标题" type="Label" parent="外/主列/顶栏" unique_id=856218092]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "第 1 幕 · 起"
+
+[node name="弹簧" type="Control" parent="外/主列/顶栏" unique_id=2104299465]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="结局行" type="Label" parent="外/主列/顶栏" unique_id=2111364942]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.831, 0.631, 0.353, 1)
+theme_override_font_sizes/font_size = 14
+text = "规定结局"
+vertical_alignment = 2
+
+[node name="观众区" type="HBoxContainer" parent="外/主列" unique_id=1251811850]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="故事框" type="PanelContainer" parent="外/主列" unique_id=1488964469]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_story")
+
+[node name="故事列" type="VBoxContainer" parent="外/主列/故事框" unique_id=1894651025]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="故事头" type="HBoxContainer" parent="外/主列/故事框/故事列" unique_id=565483120]
+layout_mode = 2
+
+[node name="标签" type="Label" parent="外/主列/故事框/故事列/故事头" unique_id=305607700]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
+theme_override_font_sizes/font_size = 13
+text = "已确立的故事"
+
+[node name="弹簧2" type="Control" parent="外/主列/故事框/故事列/故事头" unique_id=45047537]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="锚点行" type="Label" parent="外/主列/故事框/故事列/故事头" unique_id=554386366]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
+theme_override_font_sizes/font_size = 13
+text = "锚点"
+
+[node name="正史文本" type="Label" parent="外/主列/故事框/故事列" unique_id=1395127687]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 70)
+custom_maximum_size = Vector2(1280, 70)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 16
+text = "（还没有人开口。）"
+autowrap_mode = 3
+
+[node name="操作栏" type="HBoxContainer" parent="外/主列" unique_id=132695469]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="提示行" type="Label" parent="外/主列/操作栏" unique_id=1653521911]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
+theme_override_font_sizes/font_size = 14
+text = "注视其中一位"
+vertical_alignment = 1
+
+[node name="弹簧3" type="Control" parent="外/主列/操作栏" unique_id=1806651497]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="重来按钮" type="Button" parent="外/主列/操作栏" unique_id=1515150123]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "重来"
+
+[node name="下一幕按钮" type="Button" parent="外/主列/操作栏" unique_id=1532311702]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "下一幕 →"
