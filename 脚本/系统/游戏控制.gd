@@ -1,27 +1,29 @@
-## 主控 —— 一幕一幕往下走。
+## 主控 —— 地图版。
 ##
-## 七幕（出行遇转险夜终）。每一幕：
-##   多位观众各自给出"下一段"，玩家只能采纳一个。
+## 每一幕是一片地。三个讲述者站在地里，一开始都是暗的、沉默的。
+## **你走过去，他才亮起来、才开口。**
 ##
-## 玩家要凑齐的不是三个词，而是三个"形状"——
-## 判定藏在每段的"关"里，看不出来，只能靠读懂文意判断。
+## 注视在这里是字面意思：你的位置只有一个，你不可能同时站在两个人面前。
 ##
-## 卡牌 / 地图 / 观众变形 / 美术，暂时故意不做。
+## 必须走过去才算"读过"；读过的讲述者，之后可以点他直接采纳。
+## （走过去是为了建立注视的成本，走回去只是重复劳动。）
 ##
-## 界面全部在 场景/Main.tscn 里，这个脚本只管流程。
+## 界面结构在 场景/Main.tscn，讲述者在 场景/讲述者.tscn，这个脚本只管流程。
 extends Control
 
-const 卡片场景: PackedScene = preload("res://场景/角色.tscn")
+const 讲者场景: PackedScene = preload("res://场景/讲述者.tscn")
 
 # ============================================================ 界面引用
-# 用"场景唯一名"（场景树里名字旁边的 % 图标）引用。
-# 这样节点在场景里怎么挪都不会断，不用写一长串路径。
+@onready var _底色: ColorRect = %底色
+@onready var _装饰层: Control = %装饰层
+@onready var _讲者层: Control = %讲者层
+@onready var _玩家: 玩家 = %玩家
 @onready var _幕标题: Label = %幕标题
 @onready var _结局行: Label = %结局行
 @onready var _条件行: Label = %条件行
-@onready var _观众区: HBoxContainer = %观众区
-@onready var _正史文本: Label = %正史文本
-@onready var _锚点行: Label = %锚点行
+@onready var _对话框: PanelContainer = %对话框
+@onready var _说者: Label = %说者
+@onready var _台词: Label = %台词
 @onready var _提示行: Label = %提示行
 @onready var _下一幕按钮: Button = %下一幕按钮
 @onready var _重来按钮: Button = %重来按钮
@@ -32,18 +34,23 @@ const 总幕数: int = 7
 var 当前幕: int = 1
 var 上一幕采纳: String = ""
 var 本幕已选: String = ""
-## 本幕选中、但还没提交的那一段（整个字典，含"文"和"关"）。
 var 本幕草稿: Dictionary = {}
-## 已经提交的段落（数组，每项是一个"段"字典）。
 var 正史: Array = []
-var 卡片表: Dictionary = {}
-## 每位观众累计被采纳过几次。目前只作显示，还没有后果。
+var 讲者表: Dictionary = {}
 var 采纳次数: Dictionary = {}
+
+## 此刻站在谁面前（"" = 谁也不在面前）。
+var _近者: String = ""
+var _已结算: bool = false
+
+# 能走的地方。别让玩家走进顶部和底部的 UI 里。
+var _活动区: Rect2 = Rect2(40, 96, 1200, 456)
 
 
 func _ready() -> void:
 	_下一幕按钮.pressed.connect(_下一幕)
 	_重来按钮.pressed.connect(_重来)
+	_玩家.活动区 = _活动区
 	_重置计数()
 	_进入幕(1)
 
@@ -54,39 +61,82 @@ func _重置计数() -> void:
 		采纳次数[str(观众["id"])] = 0
 
 
+# ============================================================ 每帧：谁在我面前
+func _process(_delta: float) -> void:
+	if _已结算 or 讲者表.is_empty():
+		return
+
+	# 找最近的那个
+	var 玩家心: Vector2 = _玩家.圆心()
+	var 最近: String = ""
+	var 最近距: float = 1.0e9
+	for id in 讲者表:
+		var 讲: 讲述者 = 讲者表[id]
+		var d: float = 讲.距离到(玩家心)
+		if d < 最近距:
+			最近距 = d
+			最近 = str(id)
+
+	# 只有最近、且在感应距离内，才算"面对面"
+	var 新的近者: String = ""
+	if 最近 != "" and 最近距 <= 讲述者.感应距离:
+		新的近者 = 最近
+
+	for id in 讲者表:
+		讲者表[id].设为面对面(str(id) == 新的近者)
+
+	if 新的近者 != _近者:
+		_近者 = 新的近者
+		if _近者 != "":
+			讲者表[_近者].标记已读()
+
+	_刷新对话()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _已结算:
+		return
+	if event is InputEventKey:
+		var 键 := event as InputEventKey
+		if 键.pressed and not 键.echo and 键.keycode == KEY_E and _近者 != "":
+			_采纳(_近者)
+			get_viewport().set_input_as_handled()
+
+
+## 念白面板：优先显示面前这个；否则显示本幕已采纳的那个。
+func _刷新对话() -> void:
+	var 显示谁: String = _近者
+	if 显示谁 == "":
+		显示谁 = 本幕已选
+
+	if 显示谁 == "":
+		_对话框.visible = false
+		return
+
+	_对话框.visible = true
+	_说者.text = "%s 说：" % 剧本数据.取观众名(显示谁)
+	_说者.add_theme_color_override("font_color", Color(str(剧本数据.取观众(显示谁).get("色", "#ffffff"))))
+	_台词.text = 剧本数据.取文本(当前幕, 上一幕采纳, 显示谁)
+
+
 # ============================================================ 流程
 func _进入幕(幕号: int) -> void:
 	当前幕 = 幕号
 	本幕已选 = ""
 	本幕草稿 = {}
+	_近者 = ""
+	_已结算 = false
 
 	_幕标题.text = "第 %d 幕 · %s" % [幕号, 剧本数据.幕名[幕号 - 1]]
-	_结局行.text = "终点 · 他从没去过的地方"
+	# 过程中不点破终点 —— 只给个方向
+	_结局行.text = "终点 · 一个他没去过的地方"
 	_条件行.text = _条件说明()
-	_提示行.text = "读三段，选一段。你选的那一版会变成故事。"
-	# 锚点行全程留空 —— 凑到几样由你自己读出来，不给进度条。
-	_锚点行.text = ""
+	_提示行.text = "WASD / 方向键 走路 · 走近谁，谁才开口"
 	_下一幕按钮.text = "下一幕 →" if 幕号 < 总幕数 else "收束 →"
 	_下一幕按钮.visible = false
 	_重来按钮.visible = false
 
-	# 清掉上一幕的卡
-	for 子 in _观众区.get_children():
-		_观众区.remove_child(子)
-		子.queue_free()
-	卡片表.clear()
-
-	# 按当前前情，问每位观众要他的版本
-	for 观众 in 剧本数据.观众列表:
-		var id: String = str(观众["id"])
-		var 卡: 观众卡片 = 卡片场景.instantiate()
-		卡.name = id
-		_观众区.add_child(卡)
-		卡.设置内容(观众, 剧本数据.取文本(幕号, 上一幕采纳, id), int(采纳次数.get(id, 0)))
-		卡.被点击.connect(_采纳)
-		卡片表[id] = 卡
-
-	_刷新正史()
+	_布置场景(幕号)
 
 
 ## 开头那句"要凑齐哪三样"。写成意思，不写成词——这样才没法扫。
@@ -94,28 +144,85 @@ func _条件说明() -> String:
 	var 片段: Array = []
 	for i in 剧本数据.终点说明.size():
 		片段.append("%d. %s" % [i + 1, str(剧本数据.终点说明[i])])
-	return "要走到那里，故事得凑齐三样：   " + "     ".join(片段)
+	return "要走到那里，故事得凑齐三样：    " + "     ".join(片段)
 
 
-## 点卡 = 采纳。在按「下一幕」之前，随时可以改选。
+## 铺第 N 幕的地，并把三个人放上去。
+func _布置场景(幕号: int) -> void:
+	var 布局: Dictionary = 剧本数据.取布局(幕号)
+	_底色.color = Color(str(布局.get("底色", "#0b0a10")))
+
+	# 地形
+	for 子 in _装饰层.get_children():
+		_装饰层.remove_child(子)
+		子.queue_free()
+	for 项 in 布局.get("装饰", []):
+		var 块 := ColorRect.new()
+		块.position = Vector2(float(项[0]), float(项[1]))
+		块.size = Vector2(float(项[2]), float(项[3]))
+		块.color = Color(str(项[4]))
+		块.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_装饰层.add_child(块)
+
+	# 人
+	for 子 in _讲者层.get_children():
+		_讲者层.remove_child(子)
+		子.queue_free()
+	讲者表.clear()
+
+	var 站位: Array = 布局.get("站位", [])
+	for i in 剧本数据.观众列表.size():
+		if i >= 站位.size():
+			break
+		var 观众: Dictionary = 剧本数据.观众列表[i]
+		var id: String = str(观众["id"])
+		var 处: Array = 站位[i]
+
+		var 讲: 讲述者 = 讲者场景.instantiate()
+		_讲者层.add_child(讲)
+		讲.position = Vector2(float(处[0]), float(处[1])) - Vector2(28, 28)
+		讲.设置内容(观众, 剧本数据.取文本(幕号, 上一幕采纳, id))
+		讲.被采纳.connect(_采纳)
+		讲者表[id] = 讲
+
+	# 玩家回到起点
+	_玩家.移到(_找落脚点())
+	_对话框.visible = false
+
+
+## 挑一个离所有人都够远的落脚点。
+## 不这么做的话，有些幕的站位正好压在默认起点上，一进场就白送一段台词。
+func _找落脚点() -> Vector2:
+	var 底: float = _活动区.end.y - 30.0
+	var 安全距: float = 讲述者.感应距离 + 40.0
+	for 候选x in [150.0, 640.0, 1130.0]:
+		var 点: Vector2 = Vector2(float(候选x), 底)
+		var 都够远: bool = true
+		for id in 讲者表:
+			if 讲者表[id].距离到(点) < 安全距:
+				都够远 = false
+				break
+		if 都够远:
+			return 点
+	return Vector2(150.0, 底)
+
+
+## 采纳。在按「下一幕」之前随时可以改主意。
 func _采纳(id: String) -> void:
-	if 本幕已选 == id:
-		return
-
 	本幕已选 = id
 	本幕草稿 = 剧本数据.取段(当前幕, 上一幕采纳, id)
 
-	for 观众id in 卡片表:
-		卡片表[观众id].设为已选(观众id == id)
+	for 观众id in 讲者表:
+		讲者表[观众id].设为已采纳(str(观众id) == id)
 
-	_提示行.text = "已采纳「%s」。改主意的话，点别人就行 —— 按下「%s」才算数。" % [
+	_提示行.text = "已采纳「%s」。改主意就走去点别人 —— 按「%s」才算数。" % [
 		剧本数据.取观众名(id), _下一幕按钮.text
 	]
 	_下一幕按钮.visible = true
-	_刷新正史()
+	_刷新对话()
 
 
-## 到这里才真正提交本幕的选择，其他版本永久作废。
+## 到这里才真正提交本幕的选择，另外两版永久作废。
 func _下一幕() -> void:
 	if 本幕已选 == "":
 		return
@@ -139,11 +246,7 @@ func _重来() -> void:
 
 # ============================================================ 结算
 func _结算() -> void:
-	for 观众id in 卡片表:
-		卡片表[观众id].锁定()
-		# 本幕的提交刚刚才发生，把计数补上
-		卡片表[观众id].设置采纳数(int(采纳次数.get(观众id, 0)))
-
+	_已结算 = true
 	_下一幕按钮.visible = false
 	_重来按钮.visible = true
 	_幕标题.text = "完"
@@ -155,8 +258,7 @@ func _结算() -> void:
 	var 立起: Array = 剧本数据.汇总终点(各段关)
 
 	_结局行.text = "终点 · " + 剧本数据.结局正文
-	_条件行.text = _条件说明()
-	_锚点行.text = _终点清单(立起)
+	_条件行.text = _终点清单(立起) + "        " + _条件说明()
 
 	match 立起.size():
 		3:
@@ -164,9 +266,18 @@ func _结算() -> void:
 		2:
 			_提示行.text = "差一样。故事拐了个弯，停在了别处。"
 		1:
-			_提示行.text = "只凑齐一样。这故事离那个终点还远。"
+			_提示行.text = "只凑齐一样。这个故事离那个终点还远。"
 		_:
 			_提示行.text = "一样也没凑齐。这个故事和那个终点，从头到尾无关。"
+
+	# 结算时把整篇故事摊在对话板上
+	_对话框.visible = true
+	_说者.text = "你们讲出来的故事"
+	_说者.add_theme_color_override("font_color", Color("#d4a15a"))
+	var 段落: Array = []
+	for 段 in 正史:
+		段落.append(str((段 as Dictionary).get("文", "")))
+	_台词.text = "  ".join(段落)
 
 
 func _终点清单(立起: Array) -> String:
@@ -174,21 +285,3 @@ func _终点清单(立起: Array) -> String:
 	for 名 in 剧本数据.终点名:
 		片段.append(("● " + str(名)) if 名 in 立起 else ("○ " + str(名)))
 	return "凑齐   " + "    ".join(片段)
-
-
-# ============================================================ 刷新
-func _刷新正史() -> void:
-	# 显示 = 已提交的 + 本幕尚未提交的草稿
-	var 段落: Array = []
-	for 段 in 正史:
-		段落.append(str((段 as Dictionary).get("文", "")))
-	if not 本幕草稿.is_empty():
-		段落.append(str(本幕草稿.get("文", "")))
-
-	if 段落.is_empty():
-		_正史文本.text = "（还没有人开口。）"
-		_正史文本.add_theme_color_override("font_color", Color("#847c8c"))
-	else:
-		_正史文本.text = "\n\n".join(段落)
-		_正史文本.add_theme_color_override("font_color", Color("#e9e3d9"))
-	# 注意：这里**不刷新终点进度**。全程不给，是这一版的核心改动。

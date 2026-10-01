@@ -1,19 +1,22 @@
-[gd_scene format=3 uid="uid://0eq2oecc1kax"]
+[gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" uid="uid://bm77m5fjfqmt8" path="res://脚本/系统/游戏控制.gd" id="1_main"]
+[ext_resource type="Script" path="res://脚本/系统/游戏控制.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://场景/玩家.tscn" id="2_player"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_story"]
-content_margin_left = 16.0
-content_margin_top = 16.0
-content_margin_right = 16.0
-content_margin_bottom = 16.0
-bg_color = Color(1, 1, 1, 0.045)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialog"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.06, 0.055, 0.08, 0.86)
+border_width_top = 2
+border_color = Color(0.36, 0.32, 0.42, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
-[node name="Main" type="Control" unique_id=110551652]
+[node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,7 +25,8 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="背景" type="ColorRect" parent="." unique_id=348975969]
+[node name="世界" type="Control" parent="."]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,128 +34,155 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.071, 0.063, 0.086, 1)
 
-[node name="外" type="MarginContainer" parent="." unique_id=1152933786]
+[node name="底色" type="ColorRect" parent="世界"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+color = Color(0.043, 0.039, 0.063, 1)
+
+[node name="装饰层" type="Control" parent="世界"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="讲者层" type="Control" parent="世界"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="玩家" parent="世界" instance=ExtResource("2_player")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 640.0
+offset_top = 560.0
+offset_right = 684.0
+offset_bottom = 604.0
+
+[node name="界面" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 26
-theme_override_constants/margin_top = 26
+theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 26
-theme_override_constants/margin_bottom = 26
+theme_override_constants/margin_bottom = 18
 
-[node name="主列" type="VBoxContainer" parent="外" unique_id=1065114931]
+[node name="主列" type="VBoxContainer" parent="界面"]
 layout_mode = 2
-theme_override_constants/separation = 16
+mouse_filter = 2
+theme_override_constants/separation = 10
 
-[node name="顶栏" type="HBoxContainer" parent="外/主列" unique_id=531066269]
+[node name="顶栏" type="HBoxContainer" parent="界面/主列"]
 layout_mode = 2
+mouse_filter = 2
 
-[node name="幕标题" type="Label" parent="外/主列/顶栏" unique_id=856218092]
+[node name="幕标题" type="Label" parent="界面/主列/顶栏"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "第 1 幕 · 起"
+mouse_filter = 2
+theme_override_font_sizes/font_size = 26
+text = "第 1 幕"
 
-[node name="弹簧" type="Control" parent="外/主列/顶栏" unique_id=2104299465]
+[node name="弹簧" type="Control" parent="界面/主列/顶栏"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="结局行" type="Label" parent="外/主列/顶栏" unique_id=2111364942]
+[node name="结局行" type="Label" parent="界面/主列/顶栏"]
 unique_name_in_owner = true
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.831, 0.631, 0.353, 1)
 theme_override_font_sizes/font_size = 14
 text = "终点"
 vertical_alignment = 2
 
-[node name="条件行" type="Label" parent="外/主列" unique_id=740211883]
+[node name="条件行" type="Label" parent="界面/主列"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.62, 0.58, 0.66, 1)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.66, 0.62, 0.7, 1)
 theme_override_font_sizes/font_size = 14
 text = "终点三样"
 autowrap_mode = 3
 
-[node name="观众区" type="HBoxContainer" parent="外/主列" unique_id=1251811850]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 18
-
-[node name="故事框" type="PanelContainer" parent="外/主列" unique_id=1488964469]
+[node name="空当" type="Control" parent="界面/主列"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_story")
-
-[node name="故事列" type="VBoxContainer" parent="外/主列/故事框" unique_id=1894651025]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="故事头" type="HBoxContainer" parent="外/主列/故事框/故事列" unique_id=565483120]
-layout_mode = 2
-
-[node name="标签" type="Label" parent="外/主列/故事框/故事列/故事头" unique_id=305607700]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
-theme_override_font_sizes/font_size = 13
-text = "已确立的故事"
-
-[node name="弹簧2" type="Control" parent="外/主列/故事框/故事列/故事头" unique_id=45047537]
-layout_mode = 2
-size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="锚点行" type="Label" parent="外/主列/故事框/故事列/故事头" unique_id=554386366]
+[node name="对话框" type="PanelContainer" parent="界面/主列"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
-theme_override_font_sizes/font_size = 13
-text = "锚点"
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_dialog")
 
-[node name="故事滚动" type="ScrollContainer" parent="外/主列/故事框/故事列" unique_id=1395127687]
-custom_minimum_size = Vector2(0, 90)
+[node name="对话列" type="VBoxContainer" parent="界面/主列/对话框"]
 layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
 
-[node name="正史文本" type="Label" parent="外/主列/故事框/故事列/故事滚动" unique_id=17352419]
+[node name="说者" type="Label" parent="界面/主列/对话框/对话列"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 16
-text = "（还没有人开口。）"
+mouse_filter = 2
+theme_override_font_sizes/font_size = 15
+text = "走近谁，谁才开口"
+
+[node name="台词" type="Label" parent="界面/主列/对话框/对话列"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 17
+text = ""
 autowrap_mode = 3
 
-[node name="操作栏" type="HBoxContainer" parent="外/主列" unique_id=132695469]
+[node name="操作栏" type="HBoxContainer" parent="界面/主列"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 12
 
-[node name="提示行" type="Label" parent="外/主列/操作栏" unique_id=1653521911]
+[node name="提示行" type="Label" parent="界面/主列/操作栏"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.518, 0.486, 0.549, 1)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.55, 0.52, 0.6, 1)
 theme_override_font_sizes/font_size = 14
-text = "注视其中一位"
+text = "WASD / 方向键 走路"
 vertical_alignment = 1
 
-[node name="弹簧3" type="Control" parent="外/主列/操作栏" unique_id=1806651497]
+[node name="弹簧3" type="Control" parent="界面/主列/操作栏"]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="重来按钮" type="Button" parent="外/主列/操作栏" unique_id=1515150123]
+[node name="重来按钮" type="Button" parent="界面/主列/操作栏"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "重来"
 
-[node name="下一幕按钮" type="Button" parent="外/主列/操作栏" unique_id=1532311702]
+[node name="下一幕按钮" type="Button" parent="界面/主列/操作栏"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
