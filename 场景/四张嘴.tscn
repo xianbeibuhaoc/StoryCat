@@ -1,0 +1,230 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://脚本/系统/四张嘴.gd" id="1_main"]
+[ext_resource type="Shader" path="res://资源/美术/纸.gdshader" id="2_paper"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_paper"]
+shader = ExtResource("2_paper")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_story"]
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+bg_color = Color(0.13, 0.11, 0.09, 0.055)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pool"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
+bg_color = Color(0.13, 0.11, 0.09, 0.04)
+corner_radius_top_left = 9
+corner_radius_top_right = 9
+corner_radius_bottom_right = 9
+corner_radius_bottom_left = 9
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="背景" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.055, 0.047, 0.039, 1)
+
+[node name="纸" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_paper")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="现场" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="外" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 18
+
+[node name="主列" type="VBoxContainer" parent="外"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="顶栏" type="HBoxContainer" parent="外/主列"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="标题" type="Label" parent="外/主列/顶栏"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
+theme_override_font_sizes/font_size = 14
+text = "口径 · 四个人各说一句，故事才长出来"
+vertical_alignment = 1
+
+[node name="弹簧" type="Control" parent="外/主列/顶栏"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="幕次行" type="Label" parent="外/主列/顶栏"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.24, 0.21, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "第 1 幕"
+vertical_alignment = 1
+
+[node name="遗忘行" type="Label" parent="外/主列/顶栏"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
+theme_override_font_sizes/font_size = 28
+text = "已遗忘 0"
+vertical_alignment = 1
+
+[node name="中区" type="HBoxContainer" parent="外/主列"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="故事框" type="PanelContainer" parent="外/主列/中区"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_story")
+
+[node name="故事列" type="VBoxContainer" parent="外/主列/中区/故事框"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="故事标签" type="Label" parent="外/主列/中区/故事框/故事列"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
+theme_override_font_sizes/font_size = 13
+text = "故事"
+
+[node name="滚动" type="ScrollContainer" parent="外/主列/中区/故事框/故事列"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="句子区" type="VBoxContainer" parent="外/主列/中区/故事框/故事列/滚动"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="故事空" type="Label" parent="外/主列/中区/故事框/故事列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.50, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "（还没有人开口。）"
+
+[node name="嘴区" type="VBoxContainer" parent="外/主列/中区"]
+unique_name_in_owner = true
+layout_mode = 2
+custom_minimum_size = Vector2(330, 0)
+theme_override_constants/separation = 10
+
+[node name="遗忘框" type="PanelContainer" parent="外/主列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_pool")
+
+[node name="遗忘列" type="VBoxContainer" parent="外/主列/遗忘框"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="遗忘标签" type="Label" parent="外/主列/遗忘框/遗忘列"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
+theme_override_font_sizes/font_size = 13
+text = "这一幕听到的词 —— 点一个：说出口，或者拿它换掉故事里的一个词"
+
+[node name="遗忘词行" type="HBoxContainer" parent="外/主列/遗忘框/遗忘列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="操作栏" type="HBoxContainer" parent="外/主列"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="提示行" type="Label" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.28, 0.25, 0.20, 1)
+theme_override_font_sizes/font_size = 15
+text = "提示"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="说出口按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "说出口"
+
+[node name="换掉按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "换掉…"
+
+[node name="撤销按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "撤销草稿"
+
+[node name="重来按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重来"
+
+[node name="下一幕按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "下一幕 →"
+
+[node name="演出层" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
