@@ -21,6 +21,7 @@ const 讲者场景: PackedScene = preload("res://场景/讲述者.tscn")
 @onready var _幕标题: Label = %幕标题
 @onready var _结局行: Label = %结局行
 @onready var _条件行: Label = %条件行
+@onready var _事实行: Label = %事实行
 @onready var _对话框: PanelContainer = %对话框
 @onready var _说者: Label = %说者
 @onready var _台词: Label = %台词
@@ -43,6 +44,16 @@ var 采纳次数: Dictionary = {}
 var _近者: String = ""
 var _已结算: bool = false
 
+## 本幕三个人各自会说的完整内容（正文 + 回响）。换幕时算一次，整幕不变。
+var _本幕文本: Dictionary = {}
+var _本幕回响: Dictionary = {}
+
+## 喂养引擎 —— 涌现从这儿长出来。
+var _喂养: 喂养 = 喂养.new()
+
+## 每个人上一幕说过的那句回响。同一句不重复说。
+var _上次回响: Dictionary = {}
+
 # 能走的地方。别让玩家走进顶部和底部的 UI 里。
 var _活动区: Rect2 = Rect2(40, 96, 1200, 456)
 
@@ -53,12 +64,23 @@ func _ready() -> void:
 	_玩家.活动区 = _活动区
 	_重置计数()
 	_进入幕(1)
+	_显示前提()
+
+
+## 开局把设定白给。**玩家看不懂故事，一切免谈。**
+func _显示前提() -> void:
+	_对话框.visible = true
+	_说者.text = "这件事是这样的"
+	_说者.add_theme_color_override("font_color", Color("#d4a15a"))
+	_台词.text = 剧本数据.前提
 
 
 func _重置计数() -> void:
 	采纳次数.clear()
 	for 观众 in 剧本数据.观众列表:
 		采纳次数[str(观众["id"])] = 0
+	_喂养.重置()
+	_上次回响.clear()
 
 
 # ============================================================ 每帧：谁在我面前
@@ -116,7 +138,7 @@ func _刷新对话() -> void:
 	_对话框.visible = true
 	_说者.text = "%s 说：" % 剧本数据.取观众名(显示谁)
 	_说者.add_theme_color_override("font_color", Color(str(剧本数据.取观众(显示谁).get("色", "#ffffff"))))
-	_台词.text = 剧本数据.取文本(当前幕, 上一幕采纳, 显示谁)
+	_台词.text = str(_本幕文本.get(显示谁, ""))
 
 
 # ============================================================ 流程
@@ -128,6 +150,8 @@ func _进入幕(幕号: int) -> void:
 	_已结算 = false
 
 	_幕标题.text = "第 %d 幕 · %s" % [幕号, 剧本数据.幕名[幕号 - 1]]
+	# 这一幕发生了什么 —— 中立陈述，白给。三个人讲的是同一件事的三种讲法。
+	_事实行.text = 剧本数据.取事实(幕号)
 	# 过程中不点破终点 —— 只给个方向
 	_结局行.text = "终点 · 一个他没去过的地方"
 	_条件行.text = _条件说明()
@@ -169,6 +193,8 @@ func _布置场景(幕号: int) -> void:
 		_讲者层.remove_child(子)
 		子.queue_free()
 	讲者表.clear()
+	_本幕文本.clear()
+	_本幕回响.clear()
 
 	var 站位: Array = 布局.get("站位", [])
 	for i in 剧本数据.观众列表.size():
@@ -178,10 +204,23 @@ func _布置场景(幕号: int) -> void:
 		var id: String = str(观众["id"])
 		var 处: Array = 站位[i]
 
+		# 正文 + 他此刻的回响。回响是从喂养账本里长出来的，不是写死的。
+		var 正文: String = 剧本数据.取文本(幕号, id)
+		var 回响: Dictionary = _喂养.取回响(id)
+		var 完整: String = 正文
+		var 这句: String = str(回响.get("文本", ""))
+		# 只在**变了**的时候开口。没听到新东西的人，不会把同一句再念一遍。
+		if 这句 != "" and 这句 != str(_上次回响.get(id, "")):
+			完整 = 正文 + "\n" + 这句
+		if 这句 != "":
+			_上次回响[id] = 这句
+		_本幕文本[id] = 完整
+		_本幕回响[id] = 回响
+
 		var 讲: 讲述者 = 讲者场景.instantiate()
 		_讲者层.add_child(讲)
 		讲.position = Vector2(float(处[0]), float(处[1])) - Vector2(28, 28)
-		讲.设置内容(观众, 剧本数据.取文本(幕号, 上一幕采纳, id))
+		讲.设置内容(观众, 完整)
 		讲.被采纳.connect(_采纳)
 		讲者表[id] = 讲
 
@@ -210,7 +249,12 @@ func _找落脚点() -> Vector2:
 ## 采纳。在按「下一幕」之前随时可以改主意。
 func _采纳(id: String) -> void:
 	本幕已选 = id
-	本幕草稿 = 剧本数据.取段(当前幕, 上一幕采纳, id)
+	# 存的是"组装后的那一段"（正文 + 他此刻的回响），不是原始台词
+	var 段: Dictionary = 剧本数据.取段(当前幕, id).duplicate(true)
+	段["文"] = str(_本幕文本.get(id, 段.get("文", "")))
+	段["回响"] = _本幕回响.get(id, {})
+	段["喂"] = 剧本数据.取喂物(当前幕, id)
+	本幕草稿 = 段
 
 	for 观众id in 讲者表:
 		讲者表[观众id].设为已采纳(str(观众id) == id)
@@ -229,6 +273,11 @@ func _下一幕() -> void:
 
 	正史.append(本幕草稿)
 	采纳次数[本幕已选] = int(采纳次数.get(本幕已选, 0)) + 1
+
+	# ★ 涌现在这里发生：他讲的这段，喂给了另外两个人。
+	#   没有人写他们下一幕会说什么——是听出来的。
+	_喂养.喂(本幕已选, str(本幕草稿.get("喂", "")))
+
 	上一幕采纳 = 本幕已选
 
 	if 当前幕 >= 总幕数:
@@ -242,6 +291,7 @@ func _重来() -> void:
 	上一幕采纳 = ""
 	_重置计数()
 	_进入幕(1)
+	_显示前提()
 
 
 # ============================================================ 结算
@@ -270,14 +320,31 @@ func _结算() -> void:
 		_:
 			_提示行.text = "一样也没凑齐。这个故事和那个终点，从头到尾无关。"
 
-	# 结算时把整篇故事摊在对话板上
+	# 结算时把整篇故事摊在对话板上，并在末尾附上"喂养账本"
+	# —— 这是透镜：让人看见故事是怎么长出来的，而不是告诉他答案。
 	_对话框.visible = true
 	_说者.text = "你们讲出来的故事"
 	_说者.add_theme_color_override("font_color", Color("#d4a15a"))
+
 	var 段落: Array = []
 	for 段 in 正史:
 		段落.append(str((段 as Dictionary).get("文", "")))
-	_台词.text = "  ".join(段落)
+	var 全文: String = "\n\n".join(段落)
+
+	全文 += "\n\n──────────\n谁被喂了什么（这是故事自己长出来的那部分）\n"
+	for 观众 in 剧本数据.观众列表:
+		var id: String = str(观众["id"])
+		var 账: Dictionary = _喂养.账本(id)
+		var 回响: Dictionary = 账["回响"]
+		var 行: String = "%s　听谁的：%s" % [剧本数据.取观众名(id), str(账["听谁的"])]
+		if not 回响.is_empty():
+			行 += "　→　现在满嘴都是「%s」（%s）" % [
+				str(回响["意象"]),
+				"顶回去了 · 偏了" if bool(回响["偏"]) else "接住了",
+			]
+		全文 += 行 + "\n"
+
+	_台词.text = 全文
 
 
 func _终点清单(立起: Array) -> String:
