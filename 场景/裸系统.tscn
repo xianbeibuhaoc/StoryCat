@@ -1,0 +1,134 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://脚本/系统/裸系统.gd" id="1_bare"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_box"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(1, 1, 1, 0.045)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_bare")
+
+[node name="背景" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.043, 0.039, 0.063, 1)
+
+[node name="外" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 24
+
+[node name="主列" type="VBoxContainer" parent="外"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="顶栏" type="HBoxContainer" parent="外/主列"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="标题" type="Label" parent="外/主列/顶栏"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.49, 0.58, 1)
+theme_override_font_sizes/font_size = 15
+text = "裸系统 · 词块 / 掉落 / 级联"
+
+[node name="弹簧" type="Control" parent="外/主列/顶栏"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="回合行" type="Label" parent="外/主列/顶栏"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.49, 0.58, 1)
+theme_override_font_sizes/font_size = 16
+text = "回合 0 / 18"
+vertical_alignment = 1
+
+[node name="遗忘行" type="Label" parent="外/主列/顶栏"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.39, 0.45, 1)
+theme_override_font_sizes/font_size = 30
+text = "已遗忘 0"
+vertical_alignment = 1
+
+[node name="句子区" type="VBoxContainer" parent="外/主列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="空当" type="Control" parent="外/主列"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="遗忘框" type="PanelContainer" parent="外/主列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_box")
+
+[node name="遗忘列" type="VBoxContainer" parent="外/主列/遗忘框"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="遗忘标签" type="Label" parent="外/主列/遗忘框/遗忘列"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.52, 0.49, 0.58, 1)
+theme_override_font_sizes/font_size = 13
+text = "掉了的词 —— 点它，再点上面的空槽放回去"
+
+[node name="遗忘词行" type="HBoxContainer" parent="外/主列/遗忘框/遗忘列"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="操作栏" type="HBoxContainer" parent="外/主列"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="提示行" type="Label" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.66, 0.62, 0.7, 1)
+theme_override_font_sizes/font_size = 15
+text = "提示"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="重来按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "重来"
+
+[node name="下一回合按钮" type="Button" parent="外/主列/操作栏"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "下一回合 →"

@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="StoryCat"
-run/main_scene="res://场景/Main.tscn"
+run/main_scene="res://场景/裸系统.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://资源/美术/icon.svg"
 
