@@ -1,4 +1,4 @@
-﻿# 自检.ps1 —— 跑这个项目自带的三套检查。
+﻿# 自检.ps1 —— 跑这个项目自带的三套检查 + 主场景冒烟。
 #
 # 用法（在项目根目录）：
 #   pwsh -File 自检.ps1
@@ -9,7 +9,7 @@
 #   所以这里用 cmd 把输出重定向到临时文件，再读回来。
 #
 # ⚠️ 版本必须和编辑器一致。
-#   本项目用 Godot 4.7，编辑器也是 4.7。
+#   本项目用 Godot 4.7（4.7.2.stable.steam），编辑器也是同一个。
 #   用别的版本跑 --import 会重写 .godot/ 缓存，把编辑器搞乱。
 
 $ErrorActionPreference = "Stop"
@@ -22,18 +22,17 @@ if (-not (Test-Path $godot)) {
     Write-Host "找不到 Godot：$godot" -ForegroundColor Red
     Write-Host "把 自检.ps1 顶部那一行改成你编辑器用的那个 Godot 的路径。" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "★ 一定用**和编辑器同一个版本**。用别的版本跑，会重写 .godot/ 缓存，把编辑器搞乱。" -ForegroundColor Yellow
-    Write-Host ""
     exit 1
 }
 $proj = $PSScriptRoot
 $tmp  = Join-Path $env:TEMP "storycat_selfcheck.txt"
 
 # ---------------- 要跑的三套 ----------------
+# 顺序有讲究：引擎 → 剧本 → 整局。挂了的时候，先挂的那一套就是根因。
 $套件 = @(
-    @{ 名 = "引擎机制"; 路径 = "res://脚本/测试/机制自检.gd"; 项数 = 59 },
-    @{ 名 = "剧本数据"; 路径 = "res://脚本/测试/剧本自检.gd"; 项数 = 22 },
-    @{ 名 = "界面整局"; 路径 = "res://脚本/测试/对局自检.gd"; 项数 = 76 }
+    @{ 名 = "引擎机制"; 路径 = "res://脚本/测试/引擎自检.gd" },
+    @{ 名 = "剧本数据"; 路径 = "res://脚本/测试/剧本自检.gd" },
+    @{ 名 = "整局流程"; 路径 = "res://脚本/测试/整局自检.gd" }
 )
 
 Write-Host ""
@@ -104,11 +103,13 @@ if ($总失败 -eq 0) {
 } else {
     Write-Host "════ 有 $总失败 处问题 ════" -ForegroundColor Red
     Write-Host ""
-    Write-Host "挂了通常只有两种可能：" -ForegroundColor Yellow
-    Write-Host "  ① 你碰了 脚本/系统/对局.gd  或  脚本/系统/口径.gd"
-    Write-Host "  ② 你改了 脚本/数据/口径词表.gd 的**格式**（字段名、结构）"
+    Write-Host "挂了通常只有三种可能：" -ForegroundColor Yellow
+    Write-Host "  ① 你碰了 脚本/系统/引擎.gd —— 规则坏了（引擎自检会告诉你哪一条）"
+    Write-Host "  ② 你改了 脚本/数据/故事_第一案.gd 的**格式**（字段名、词类、变体条件）"
+    Write-Host "  ③ 你改了 主题.gd 的旋钮，改得前后矛盾了"
     Write-Host ""
-    Write-Host "如果报的是 `"Cannot load ... / Failed loading resource`" —— 那是 UID 缓存过期，"
-    Write-Host "不是代码问题：把 .godot/uid_cache.bin 删掉，重开编辑器就好。"
+    Write-Host "改剧本内容一般不会碰坏引擎那几十条 —— 它们验的是规则，不是剧情。" -ForegroundColor DarkGray
+    Write-Host "改完想手动玩一遍：直接用编辑器 F5。想深挖：游戏里按 F1 开调试叠层，" -ForegroundColor DarkGray
+    Write-Host "里面有「重放并断言」，能当场验证这一局可不可复现。" -ForegroundColor DarkGray
 }
 Write-Host ""

@@ -1,277 +1,423 @@
-## 剧本自检 —— 验证《口径》第一案的数据立得住，并模拟整局跑通。
+## 剧本自检 —— 验《欢迎回来》第一案的数据立得住。
 ##
 ## 跑法：
-##   Godot_v4.4-stable_win64_console.exe --headless --path . --script res://脚本/测试/剧本自检.gd
+##   godot --headless --path <项目> --script res://脚本/测试/剧本自检.gd
 ##
-## 数据出错比代码出错更贵：写错一个词的互斥配对，那一局就永远触发不了矛盾，
-## 而你不会知道。这个脚本就是为了让这种错当场炸出来。
+## ★ 数据出错比代码出错更贵：
+##   写错一个词的词类、把互斥对配成"永远同时出现"、让一条变体永远命中不了 ——
+##   这些在那局游戏里都**看不出来**，只是悄悄少了一块内容。
+##   这个脚本就是让这种错当场炸出来。
+##
+## 退出码 0 = 全过。
 extends SceneTree
 
-const 引擎 := preload("res://脚本/系统/口径.gd")
+const 故事路径: String = "res://脚本/数据/故事_第一案.gd"
+const 期望幕数: int = 7
+const 每类最少词数: int = 3
 
 var _通过: int = 0
 var _失败: int = 0
-
-
-func _ok(名: String, 条件: bool, 补充: String = "") -> void:
-	if 条件:
-		_通过 += 1
-		print("  [OK] ", 名)
-	else:
-		_失败 += 1
-		print("  [XX] ", 名, "　← 实际：", 补充)
-
-
-func _组(名: String) -> void:
-	print("")
-	print("── ", 名)
+var 数据: Dictionary = {}
 
 
 func _initialize() -> void:
 	print("")
-	print("════════ 口径 · 剧本自检（第一案「那个人」）════════")
-
-	_测_结构()
-	_测_赌注()
-	_测_互斥()
-	_测_回响()
-	_看_手牌()
-	_测_对局_救了那句()
-	_测_对局_没救那句()
-
+	print("════════ 欢迎回来 · 剧本自检（第一案）════════")
+	数据 = _读()
+	if 数据.is_empty():
+		print("  [XX] 读不到故事数据：", 故事路径)
+		_失败 += 1
+	else:
+		_跑()
 	print("")
 	print("════════ 通过 %d · 失败 %d ════════" % [_通过, _失败])
 	print("")
 	quit(1 if _失败 > 0 else 0)
 
 
-# ============================================================ 1. 结构
-func _测_结构() -> void:
-	_组("① 每一幕：四个人都开口了，而且都带着词")
-
-	var 幕数: int = 口径词表.幕表.size()
-	_ok("一共七幕", 幕数 == 7, str(幕数))
-
-	var 缺: Array = []
-	for i in 幕数:
-		var 幕: Dictionary = 口径词表.取幕(i + 1)
-		if str(幕.get("名", "")) == "":
-			缺.append("第%d幕缺幕名" % (i + 1))
-		if str(幕.get("事实", "")) == "":
-			缺.append("第%d幕缺「事实」" % (i + 1))
-		for 人 in 口径词表.讲述者:
-			var id: String = str(人.get("id", ""))
-			var 条: Dictionary = 幕.get(id, {})
-			if str(条.get("文", "")) == "":
-				缺.append("第%d幕 %s 没台词" % [i + 1, id])
-			if (条.get("词", []) as Array).is_empty():
-				缺.append("第%d幕 %s 没标词" % [i + 1, id])
-	_ok("四个人七幕全齐", 缺.is_empty(), str(缺))
-
-	# 手牌去重后不该有重复串
-	for i in 幕数:
-		var 手: Array = 口径词表.手牌(i + 1)
-		var 去重: Array = []
-		for w in 手:
-			if not w in 去重:
-				去重.append(w)
-		_ok("第%d幕手牌无重复（%d 张）" % [i + 1, 手.size()], 手.size() == 去重.size(), str(手))
+func _读() -> Dictionary:
+	var 脚本: Variant = load(故事路径)
+	if 脚本 == null or not (脚本 is GDScript):
+		return {}
+	var 表: Dictionary = (脚本 as GDScript).get_script_constant_map()
+	var 值: Variant = 表.get("数据", {})
+	return 值 as Dictionary if 值 is Dictionary else {}
 
 
-# ============================================================ 2. 赌注
-func _测_赌注() -> void:
-	_组("② 赌注成立：「欢迎回来」必须是孤证，而且必须只有一处")
-
-	var 出现幕: Array = []
-	var 说的人: Array = []
-	for i in 口径词表.幕表.size():
-		var 谁: Array = 口径词表.谁说过(i + 1, 口径词表.结尾词)
-		if not 谁.is_empty():
-			出现幕.append(i + 1)
-			说的人.append_array(谁)
-
-	_ok("「%s」在剧本里出现过" % 口径词表.结尾词, not 出现幕.is_empty(), str(出现幕))
-	_ok("★ 只有一个人说过它 —— 孤证成立", 说的人.size() <= 1, str(说的人))
-	_ok("★ 它只在第 3 幕出现一次（最脆的那句话）", 出现幕 == [3], str(出现幕))
-	print("      → 它由「%s」说出，1 个证人。" % (说的人[0] if not 说的人.is_empty() else "?"))
-
-	# 跨幕复用的词 —— 全局替换的演示点
-	var 跨幕: Array = []
-	var 计数: Dictionary = {}
-	for i in 口径词表.幕表.size():
-		for w in 口径词表.手牌(i + 1):
-			计数[w] = int(计数.get(w, 0)) + 1
-	for w in 计数:
-		if int(计数[w]) > 1:
-			跨幕.append("%s×%d" % [w, 计数[w]])
-	_ok("有词跨幕复用（换一处、改一片）", not 跨幕.is_empty(), str(跨幕))
-	print("      → 跨幕词：", "、".join(跨幕))
+func _查(名: String, 条件: bool) -> void:
+	if 条件:
+		_通过 += 1
+	else:
+		_失败 += 1
+		print("  [XX] ", 名)
 
 
-# ============================================================ 3. 互斥
+func _跑() -> void:
+	_测_开场与身份()
+	_测_讲者()
+	_测_幕与说法()
+	_测_词表与词类()
+	_测_互斥()
+	_测_变体()
+	_测_任务与结局()
+	_测_其他达成()
+	_测_美术空位()
+
+
+# ============================================================
+func _测_开场与身份() -> void:
+	print("── 开场 / 身份 / 任务（v3 §12 M2）")
+	_查("有 id", str(数据.get("id", "")) != "")
+	_查("有 名", str(数据.get("名", "")) != "")
+	_查("有 前提", str(数据.get("前提", "")).length() >= 10)
+	_查("★ 有 身份（玩家是谁）", str(数据.get("身份", "")).length() >= 10)
+	_查("★ 有 任务说明（要干什么）", str(数据.get("任务说明", "")).length() >= 6)
+	_查("身份里说清了「你」是谁", str(数据.get("身份", "")).contains("你"))
+	_查("任务说明里说清了目标", str(数据.get("任务说明", "")).length() >= 10)
+	# 旧的作废框架不许漏进来
+	for 禁 in ["共忆", "周迟", "回访", "至高思想"]:
+		_查("没有作废框架的「%s」" % 禁, not JSON.stringify(数据).contains(禁))
+
+
+func _测_讲者() -> void:
+	print("── 讲者")
+	var 表: Array = 故事.取讲者表(数据)
+	_查("★ 恰好四位亲历者", 表.size() == 4)
+	var id集: Dictionary = {}
+	for 人 in 表:
+		var 条: Dictionary = 人
+		var id: String = str(条.get("id", ""))
+		_查("讲者「%s」有 id" % id, id != "")
+		_查("讲者「%s」有名字" % id, str(条.get("名", "")) != "")
+		_查("讲者「%s」有颜色" % id, str(条.get("色", "")) != "")
+		_查("讲者 id 不重复：%s" % id, not id集.has(id))
+		id集[id] = true
+		var 立绘: String = str(条.get("立绘", ""))
+		_查("讲者「%s」的立绘空位合法（空着，或者文件真的在）" % id,
+			立绘 == "" or FileAccess.file_exists(立绘))
+
+
+func _测_幕与说法() -> void:
+	print("── 幕 / 四个人的说法")
+	var 幕表: Array = 数据.get("幕", [])
+	_查("★ 幕数 = %d" % 期望幕数, 幕表.size() == 期望幕数)
+	var 讲者表: Array = 故事.取讲者表(数据)
+	var 合法id: Array = []
+	for 人 in 讲者表:
+		合法id.append(str((人 as Dictionary).get("id", "")))
+
+	for i in 幕表.size():
+		var 幕: Dictionary = 幕表[i]
+		var 号: int = i + 1
+		_查("第 %d 幕有幕名" % 号, str(幕.get("名", "")) != "")
+		_查("第 %d 幕有中立事实" % 号, str(幕.get("事实", "")) != "")
+		var 说法: Array = 幕.get("说法", [])
+		_查("★ 第 %d 幕恰好四个人开口" % 号, 说法.size() == 4)
+		var 说过: Array = []
+		for 条 in 说法:
+			var 人条: Dictionary = 条
+			var id: String = str(人条.get("讲者", ""))
+			说过.append(id)
+			_查("第 %d 幕「%s」是合法讲者" % [号, id], id in 合法id)
+			_查("第 %d 幕「%s」有话" % [号, id], str(人条.get("文", "")) != "")
+			_查("第 %d 幕「%s」标了词" % [号, id], (人条.get("词", []) as Array).size() >= 2)
+		for id2 in 合法id:
+			_查("第 %d 幕「%s」在" % [号, id2], id2 in 说过)
+
+
+func _测_词表与词类() -> void:
+	print("── 词表 / 五类")
+	var 词表: Dictionary = 数据.get("词表", {})
+	_查("词表非空", 词表.size() > 0)
+
+	# 用到的词分成两拨：
+	#   在词表里 = 可换的词（必须词类合法）
+	#   不在词表里 = **骨架词**（进故事、参与念故事，但换不了）—— 只能有少数几个短虚词
+	var 用到: Array = _所有用到的词()
+	var 骨架: Array = []
+	var 类错的: Array = []
+	for w in 用到:
+		var 词: String = str(w)
+		if not 词表.has(词):
+			骨架.append(词)
+		elif not 故事.词类合法(str(词表[词])):
+			类错的.append("%s=%s" % [词, str(词表[词])])
+	_查("★ 词表里的词类都合法%s" % ("" if 类错的.is_empty() else "　错：" + "、".join(类错的)), 类错的.is_empty())
+	print("      骨架词（换不了）：", "、".join(骨架) if not 骨架.is_empty() else "（没有）")
+	_查("★ 骨架词不超过 10 个", 骨架.size() <= 10)
+	var 太长: Array = []
+	for w2 in 骨架:
+		if str(w2).length() > 5:
+			太长.append(str(w2))
+	_查("★ 骨架词都是短虚词%s" % ("" if 太长.is_empty() else "　太长：" + "、".join(太长)), 太长.is_empty())
+
+	# 五类各自至少几个
+	var 分布: Dictionary = {}
+	for w in 词表:
+		var 类: String = str(词表[w])
+		分布[类] = int(分布.get(类, 0)) + 1
+	for 类2 in 故事.词类表:
+		_查("★「%s」类至少有 %d 个词（不然换不了）" % [类2, 每类最少词数],
+			int(分布.get(类2, 0)) >= 每类最少词数)
+
+	# 死词：词表里有、但谁都没说过
+	var 死的: Array = []
+	for w2 in 词表:
+		if not str(w2) in 用到:
+			死的.append(str(w2))
+	_查("没有用不上的死词%s" % ("" if 死的.is_empty() else "　死词：" + "、".join(死的)), 死的.is_empty())
+
+
 func _测_互斥() -> void:
-	_组("③ 互斥词对：每一个词都真的在剧本里存在")
+	print("── 互斥表")
+	var 互斥: Array = 数据.get("互斥", [])
+	var 词表: Dictionary = 数据.get("词表", {})
+	_查("互斥表非空", not 互斥.is_empty())
+	for 对 in 互斥:
+		var 条: Array = 对
+		_查("互斥对是两词", 条.size() == 2)
+		var a: String = str(条[0])
+		var b: String = str(条[1])
+		_查("互斥词「%s」在词表里" % a, 词表.has(a))
+		_查("互斥词「%s」在词表里" % b, 词表.has(b))
+		_查("互斥对两词不是同一个词", a != b)
+		# ★ 死代码检查：必须存在一个说法"含 a 不含 b"，否则这一对永远分不开
+		_查("★ 互斥对「%s / %s」能分开（不是死代码）" % [a, b], _能分开(a, b) or _能分开(b, a))
 
-	var 全部: Dictionary = {}
-	for i in 口径词表.幕表.size():
-		for w in 口径词表.手牌(i + 1):
-			全部[str(w)] = true
 
-	var 找不到: Array = []
-	for 对 in 口径词表.互斥:
-		for w in 对:
-			if not 全部.has(str(w)):
-				找不到.append(str(w))
-	_ok("互斥词对里没有写错的词", 找不到.is_empty(), "剧本里找不到：" + str(找不到))
+## 有没有哪个说法里出现了 a 却没出现 b —— 有的话玩家就能"只要 a"。
+func _能分开(a: String, b: String) -> bool:
+	for 幕 in 数据.get("幕", []):
+		for 条 in (幕 as Dictionary).get("说法", []):
+			var 词: Array = (条 as Dictionary).get("词", [])
+			if a in 词 and not b in 词:
+				return true
+	return false
 
-	# ★ 真正该守的规则：每一对的两个词，必须能从**不同的两幕**分别选进来。
-	#   同一幕四个版本互斥，玩家只选一句 —— 同幕配对是死代码，永远触发不了。
-	var 死对: Array = []
-	var 明细: Array = []
-	for 对 in 口径词表.互斥:
-		var a: String = str(对[0])
-		var b: String = str(对[1])
-		var a幕: Array = _出处(a)
-		var b幕: Array = _出处(b)
-		var 可达: bool = false
-		for i in a幕:
-			for j in b幕:
-				if int(i) != int(j):
-					可达 = true
-		if 可达:
-			明细.append("%s×%s" % [a, b])
+
+func _测_变体() -> void:
+	print("── 变体（换词 → 下一幕见效）")
+	var 幕表: Array = 数据.get("幕", [])
+	var 词表: Dictionary = 数据.get("词表", {})
+	var 变体幕数: int = 0
+	var 空条件: Array = []
+	var 引用了不存在的词: Array = []
+	var 永远命中不了: Array = []
+
+	for i in 幕表.size():
+		var 幕: Dictionary = 幕表[i]
+		var 号: int = i + 1
+		var 变体表: Array = 幕.get("变体", [])
+		if not 变体表.is_empty():
+			变体幕数 += 1
+		for j in 变体表.size():
+			var 变: Dictionary = 变体表[j]
+			var 标: String = "第%d幕 变体#%d" % [号, j]
+			var 当: Dictionary = 变.get("当", {})
+			if 当.is_empty():
+				空条件.append(标)
+			_查("%s 有反应文本或有覆盖" % 标,
+				str(变.get("反应", "")) != "" or 变.has("覆盖") or 变.has("事实") or 变.has("场景"))
+
+			# 引用的词必须存在
+			for w in _条件里的词(当):
+				if not 词表.has(str(w)):
+					引用了不存在的词.append("%s → %s" % [标, str(w)])
+				# ★ 第 N 幕求值时，"含"引用的词必须在第 1..N-1 幕出现过
+				if 号 == 1:
+					永远命中不了.append("%s（第1幕进场时故事是空的，任何「含」都不成立）" % 标)
+				elif not (str(w) in _到幕为止听过的(号 - 1)):
+					永远命中不了.append("%s → 「%s」在第 %d 幕之前没人提过" % [标, str(w), 号])
+			for 对 in _条件里的换过对(当):
+				var 旧2: String = str(对[0])
+				var 新2: String = str(对[1])
+				if not 词表.has(旧2):
+					引用了不存在的词.append("%s → 换过 %s" % [标, 旧2])
+					continue
+				# ★ 第 N 幕求值时，这次替换必须**在第 N 幕之前真的做得到**：
+				#   旧词要听过，而且要有一个**同类的替代词**也听过（不然根本换不动）
+				if not _幕前换得动(旧2, 号):
+					永远命中不了.append("%s → 第 %d 幕之前换不动「%s」（没有听过的同类词可换）" % [标, 号, 旧2])
+				if 新2 != "*":
+					if not 词表.has(新2):
+						引用了不存在的词.append("%s → 换过成 %s" % [标, 新2])
+					elif not 新2 in _到幕为止听过的(号 - 1):
+						永远命中不了.append("%s → 想换成「%s」，可这个词第 %d 幕之前没人提过" % [标, 新2, 号])
+			# 覆盖里的词也得在词表里、且合法
+			for w2 in _覆盖里的词(变):
+				if not 词表.has(w2):
+					引用了不存在的词.append("%s 覆盖 → %s" % [标, w2])
+
+	_查("★ 没有空条件的变体%s" % ("" if 空条件.is_empty() else "　" + "、".join(空条件)), 空条件.is_empty())
+	_查("★ 变体引用的词都在词表里%s" % ("" if 引用了不存在的词.is_empty() else "　" + "、".join(引用了不存在的词)),
+		引用了不存在的词.is_empty())
+	_查("★ 没有永远命中不了的变体%s" % ("" if 永远命中不了.is_empty() else "　" + "；".join(永远命中不了)),
+		永远命中不了.is_empty())
+	_查("★ 至少 4 幕有变体（荒诞因果链要成链）", 变体幕数 >= 4)
+
+
+func _测_任务与结局() -> void:
+	print("── 任务 / 结局（M6）")
+	var 任务: Dictionary = 数据.get("任务", {})
+	var 条件: Dictionary = 任务.get("达成", {})
+	_查("有 任务.达成 条件", not 条件.is_empty())
+	_查("结局台词非空", str(任务.get("结局台词", "")) != "")
+	_查("未达成台词非空", str(任务.get("未达成台词", "")) != "")
+	_查("★ 结局台词是「欢迎回来」", str(任务.get("结局台词", "")).contains("欢迎回来"))
+
+	# 达成条件引用的词必须在词表里
+	var 词表: Dictionary = 数据.get("词表", {})
+	var 缺: Array = []
+	for 键 in ["含", "不含", "至少"]:
+		for w in 条件.get(键, []):
+			if not 词表.has(str(w)):
+				缺.append(str(w))
+	for 对 in 条件.get("不含对", []):
+		for w2 in (对 as Array):
+			if not 词表.has(str(w2)):
+				缺.append(str(w2))
+	_查("任务条件引用的词都在词表里%s" % ("" if 缺.is_empty() else "　缺：" + "、".join(缺)), 缺.is_empty())
+
+	# 任务必须真的能达成（跑一条路看看）
+	var 进: Dictionary = 引擎.new(数据).任务进度()
+	_查("★ 任务条件是能判的（条目数 ≥ 1）", int(进["总"]) >= 1)
+
+
+func _测_其他达成() -> void:
+	print("── 其他合理达成方式（优先加强 4）")
+	var 别: Array = 数据.get("其他达成", [])
+	_查("★ 至少给了一条「另一种走法」", not 别.is_empty())
+	var 幕数: int = (数据.get("幕", []) as Array).size()
+	var 合法id: Array = []
+	for 人 in 故事.取讲者表(数据):
+		合法id.append(str((人 as Dictionary).get("id", "")))
+	for i in 别.size():
+		var 条: Dictionary = 别[i]
+		var 标: String = "其他达成#%d" % i
+		_查("%s 有说明" % 标, str(条.get("说明", "")) != "")
+		var 底本: Array = 条.get("底本", [])
+		_查("★ %s 的底本长度 = 幕数（%d）" % [标, 幕数], 底本.size() == 幕数)
+		var 都合法: bool = true
+		for id in 底本:
+			if not str(id) in 合法id:
+				都合法 = false
+		_查("%s 的底本都是合法讲者" % 标, 都合法)
+
+	# ★ 最硬的一条：引擎真的跑一遍，跑不通就是写谎话
+	var 校验: Array = 对局.new(数据).校验其他达成()
+	var 成立的: int = 0
+	for i2 in 校验.size():
+		var 条2: Dictionary = 校验[i2]
+		if bool(条2["成立"]):
+			成立的 += 1
 		else:
-			死对.append("%s×%s（都只在第 %s 幕）" % [a, b, str(a幕)])
-	_ok("每一对都能被玩出来（跨幕可达）", 死对.is_empty(),
-		"永远触发不了的死对：" + str(死对))
-	print("      → 可达的打架组合：", "、".join(明细))
+			_查("★ 其他达成#%d 真的能达成（%s）" % [i2, str(条2["理由"])], false)
+	_查("★ 至少一条其他走法被引擎验成成立", 成立的 >= 1)
 
 
-## 一个词在第几幕的手牌里。
-func _出处(词: String) -> Array:
+func _测_美术空位() -> void:
+	print("── 美术空位（填了就必须真的有那个文件）")
+	for i in (数据.get("幕", []) as Array).size():
+		var 幕: Dictionary = (数据.get("幕", []) as Array)[i]
+		var 场: Dictionary = 幕.get("场景", {})
+		_查("第 %d 幕场景是字典" % (i + 1), 场 is Dictionary)
+		_查("第 %d 幕场景有 背景 字段" % (i + 1), 场.has("背景"))
+		_查("第 %d 幕场景有 光 字段" % (i + 1), 场.has("光"))
+		var 背景: String = str(场.get("背景", ""))
+		_查("第 %d 幕的背景空位合法（空的，或者文件真的在）" % (i + 1),
+			背景 == "" or FileAccess.file_exists(背景))
+
+	var 物件: Dictionary = 数据.get("物件", {})
+	var 词表: Dictionary = 数据.get("词表", {})
+	for w in 物件:
+		_查("物件表的键「%s」是故事里的词" % str(w), 词表.has(str(w)))
+		_查("物件表的值「%s」是字符串" % str(w), 物件[w] is String)
+
+
+# ============================================================ 工具
+func _所有用到的词() -> Array:
 	var 结果: Array = []
-	for i in 口径词表.幕表.size():
-		if 词 in 口径词表.手牌(i + 1):
-			结果.append(i + 1)
+	for 幕 in 数据.get("幕", []):
+		for 条 in (幕 as Dictionary).get("说法", []):
+			for w in (条 as Dictionary).get("词", []):
+				if not str(w) in 结果:
+					结果.append(str(w))
+		for 变 in (幕 as Dictionary).get("变体", []):
+			for w2 in _覆盖里的词(变 as Dictionary):
+				if not w2 in 结果:
+					结果.append(w2)
+			for w3 in _条件里的词((变 as Dictionary).get("当", {})):
+				if not str(w3) in 结果:
+					结果.append(str(w3))
 	return 结果
 
 
-# ============================================================ 4. 回响
-func _测_回响() -> void:
-	_组("④ 回响模板：每个人承、顶都有，且都带 {词} 占位")
-
-	var 缺: Array = []
-	for 人 in 口径词表.讲述者:
-		var id: String = str(人.get("id", ""))
-		var 表: Dictionary = 口径词表.回响.get(id, {})
-		if 表.is_empty():
-			缺.append("%s 没有回响表" % id)
-			continue
-		for 态 in ["承", "顶"]:
-			var 池: Array = 表.get(态, [])
-			if 池.is_empty():
-				缺.append("%s 缺「%s」" % [id, 态])
-			for 句 in 池:
-				if not "{词}" in str(句):
-					缺.append("%s 的「%s」里没写 {词}" % [id, str(句)])
-	_ok("四个人的承/顶都齐", 缺.is_empty(), str(缺))
-
-	# 占位真的会被替换掉
-	var 句: String = 口径词表.取回响("k", "欢迎回来", true)
-	_ok("取回响会把 {词} 换掉", 句 != "" and "欢迎回来" in 句, 句)
+func _到幕为止听过的(幕号: int) -> Array:
+	var 结果: Array = []
+	for i in mini(幕号, (数据.get("幕", []) as Array).size()):
+		var 幕: Dictionary = (数据.get("幕", []) as Array)[i]
+		for 条 in 幕.get("说法", []):
+			for w in (条 as Dictionary).get("词", []):
+				if not str(w) in 结果:
+					结果.append(str(w))
+	return 结果
 
 
-# ============================================================ 5. 手牌（人眼看）
-func _看_手牌() -> void:
-	_组("⑤ 每一幕的手牌（人眼过一遍：任意两个词对调，句子读得通吗）")
-	for i in 口径词表.幕表.size():
-		print("")
-		print("  第 %d 幕 · %s" % [i + 1, str(口径词表.取幕(i + 1).get("名", ""))])
-		print("    %s" % str(口径词表.取幕(i + 1).get("事实", "")))
-		for 人 in 口径词表.讲述者:
-			var id: String = str(人.get("id", ""))
-			var 条: Dictionary = 口径词表.取幕(i + 1).get(id, {})
-			print("    [%s] %s" % [str(人.get("名字", id)), str(条.get("文", ""))])
-			print("         词：%s" % "／".join(条.get("词", [])))
+func _条件里的词(当: Dictionary) -> Array:
+	var 结果: Array = []
+	for 键 in ["含", "不含"]:
+		for w in 当.get(键, []):
+			if not str(w) in 结果:
+				结果.append(str(w))
+	for 子 in 当.get("任", []):
+		for w2 in _条件里的词(子 as Dictionary):
+			if not w2 in 结果:
+				结果.append(w2)
+	return 结果
 
 
-# ============================================================ 6. 对局模拟（救了那句）
-## 策略：每一幕挑说得最多的那个人的说法，然后把「欢迎回来」说出口。
-func _测_对局_救了那句() -> void:
-	_组("⑥ 整局模拟 A：每幕选「同桌」的说法，第 3 幕把「欢迎回来」说出口")
-
-	var 结果: Dictionary = _跑一局(true)
-	_ok("七幕走完了", int(结果["幕"]) == 7, str(结果["幕"]))
-	_ok("★ 最后「%s」还活着" % 口径词表.结尾词,
-		int(结果["结尾档"]) != 口径.档_哑, "档位=%d 清晰度=%.2f" % [int(结果["结尾档"]), float(结果["结尾清晰"])])
-	_ok("故事念得出来", (结果["行"] as Array).size() == 7, str((结果["行"] as Array).size()))
-	print("")
-	_打印故事(结果)
+func _条件里的旧词(当: Dictionary) -> Array:
+	var 结果: Array = []
+	for 对 in 当.get("换过", []):
+		if (对 as Array).size() >= 1:
+			结果.append(str((对 as Array)[0]))
+	for 子 in 当.get("任", []):
+		for w in _条件里的旧词(子 as Dictionary):
+			结果.append(w)
+	return 结果
 
 
-# ============================================================ 7. 对局模拟（没救）
-func _测_对局_没救那句() -> void:
-	_组("⑦ 整局模拟 B：同样选法，但从不说出口 —— 那句会没")
-
-	var 结果: Dictionary = _跑一局(false)
-	_ok("★ 最后「%s」哑了" % 口径词表.结尾词,
-		int(结果["结尾档"]) == 口径.档_哑,
-		"档位=%d 清晰度=%.2f" % [int(结果["结尾档"]), float(结果["结尾清晰"])])
-	_ok("★ 但故事没有崩 —— 那句话划掉了，位置还在",
-		(结果["行"] as Array).size() == 7, str((结果["行"] as Array).size()))
-	print("")
-	_打印故事(结果)
-
-
-func _跑一局(救那句: bool) -> Dictionary:
-	var e: 口径 = 引擎.new()
-	var 幕数: int = 口径词表.幕表.size()
-
-	for i in 幕数:
-		var 幕号: int = i + 1
-		# ① 记账：四个人说的话你全听见了（哪怕你只选一句）
-		for 人 in 口径词表.讲述者:
-			var id: String = str(人.get("id", ""))
-			var 条: Dictionary = 口径词表.取幕(幕号).get(id, {})
-			e.记账(id, 条.get("词", []))
-
-		# ② 选一个人的说法进故事
-		e.追加句子(口径词表.取幕(幕号).get("tong", {}).get("词", []))
-
-		# ③ 说出口
-		if 救那句 and 幕号 == 3:
-			e.说出口(口径词表.结尾词)
-			# 下一幕别人跟着说 —— 这是引擎外的规则，模拟时手写
-			e.他也说了("k", 口径词表.结尾词)
-			e.他也说了("ma", 口径词表.结尾词)
-
-		e.流逝()
-
-	return {
-		"幕": 幕数,
-		"行": e.取故事文本(),
-		"结尾档": e.取档(口径词表.结尾词),
-		"结尾清晰": e.取清晰(口径词表.结尾词),
-		"缝合度": e.缝合度(),
-		"统计": e.统计(),
-		"矛盾": e.查矛盾(口径词表.互斥),
-		"引擎": e,
-	}
+## [旧, 新] 对（含"任"里面的）。
+func _条件里的换过对(当: Dictionary) -> Array:
+	var 结果: Array = []
+	for 对 in 当.get("换过", []):
+		if (对 as Array).size() >= 2:
+			结果.append(对)
+	for 子 in 当.get("任", []):
+		if 子 is Dictionary:
+			for 对2 in _条件里的换过对(子 as Dictionary):
+				结果.append(对2)
+	return 结果
 
 
-func _打印故事(结果: Dictionary) -> void:
-	print("      ┌─ 念出来的故事 ─────────────")
-	for 行 in 结果["行"]:
-		print("      │ ", str(行))
-	print("      ├────────────────────────────")
-	print("      │ 缝合度 %.2f　分档 %s" % [float(结果["缝合度"]), str(结果["统计"])])
-	var 矛: Array = 结果["矛盾"]
-	if 矛.is_empty():
-		print("      │ 没有矛盾")
-	else:
-		print("      │ 矛盾 ", str(矛))
-	if int(结果["结尾档"]) == 口径.档_哑:
-		print("      │ 最后一句：「%s」—— 没了。" % 口径词表.结尾词)
-	else:
-		print("      │ 最后一句：「%s。」" % 口径词表.结尾词)
-	print("      └────────────────────────────")
+## ★ 第 N 幕之前，玩家真的换得动「旧」吗？
+##   要换得动，得有一个**听过的、同类的**别的词 —— 否则这条变体永远等不到。
+func _幕前换得动(旧: String, 幕号: int) -> bool:
+	var 词表: Dictionary = 数据.get("词表", {})
+	var 类: String = str(词表.get(旧, ""))
+	if 类 == "":
+		return false
+	for w in _到幕为止听过的(幕号 - 1):
+		var 词: String = str(w)
+		if 词 != 旧 and str(词表.get(词, "")) == 类:
+			return true
+	return false
+
+
+func _覆盖里的词(变: Dictionary) -> Array:
+	var 结果: Array = []
+	for id in 变.get("覆盖", {}):
+		for w in ((变["覆盖"] as Dictionary)[id] as Dictionary).get("词", []):
+			if not str(w) in 结果:
+				结果.append(str(w))
+	return 结果

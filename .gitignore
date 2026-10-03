@@ -1,3 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# 导出的 Windows 包（109 MB，不进版本库；要发就用 export_presets.cfg 重新导一次）
+/导出/

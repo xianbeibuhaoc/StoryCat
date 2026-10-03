@@ -1,0 +1,85 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://脚本/系统/主.gd" id="1_main"]
+[ext_resource type="Shader" uid="uid://baase5ky7lo37" path="res://脚本/shader/纸.gdshader" id="2_paper"]
+[ext_resource type="Script" path="res://脚本/系统/界面.gd" id="3_ui"]
+[ext_resource type="Script" path="res://脚本/系统/调试.gd" id="4_debug"]
+[ext_resource type="Script" path="res://脚本/系统/默认交互.gd" id="5_input"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_paper"]
+shader = ExtResource("2_paper")
+shader_parameter/paper_color = Color(0.827, 0.78, 0.675, 1)
+shader_parameter/dark_color = Color(0.078, 0.067, 0.055, 1)
+shader_parameter/grain = 0.35
+shader_parameter/mottle = 0.16
+shader_parameter/vignette = 0.55
+shader_parameter/crease = 0.16
+shader_parameter/breathe = 0.006
+shader_parameter/breathe_speed = 0.35
+shader_parameter/exposure = 1.0
+
+[node name="主" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main")
+
+[node name="纸" type="ColorRect" parent="."]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_paper")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="现场层" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="界面" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3_ui")
+
+[node name="演出层" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="调试层" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("4_debug")
+
+[node name="交互层" type="Node" parent="."]
+unique_name_in_owner = true
+script = ExtResource("5_input")
