@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://c256qky0muvsr"]
+
+[ext_resource type="Texture2D" uid="uid://cohtrv6mwxixs" path="res://资源/美术/校园门口.png" id="1_xmve5"]
+
+[sub_resource type="Gradient" id="Gradient_xmve5"]
+offsets = PackedFloat32Array(1)
+colors = PackedColorArray(0.83, 0.83, 0.83, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_vkqoe"]
+gradient = SubResource("Gradient_xmve5")
+
+[node name="现场" type="Node2D" unique_id=1458511772]
+
+[node name="背景" type="Sprite2D" parent="." unique_id=1388497815]
+position = Vector2(640, 360)
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("1_xmve5")
+
+[node name="操作层" type="Control" parent="." unique_id=996495360]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 1280.0
+offset_bottom = 720.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="纸面" type="TextureRect" parent="操作层" unique_id=1041354730]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -225.5
+offset_top = -286.5
+offset_right = 225.5
+offset_bottom = 286.5
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_vkqoe")
+
+[node name="打开纸面" type="Button" parent="操作层" unique_id=1575260201]
+layout_mode = 0
+offset_left = 61.0
+offset_top = 589.3651
+offset_right = 127.0
+offset_bottom = 689.3651

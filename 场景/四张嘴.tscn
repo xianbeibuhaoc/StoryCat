@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://bu22rijfyfxt5" path="res://脚本/系统/四张嘴.gd" id="1_main"]
 [ext_resource type="Shader" uid="uid://baase5ky7lo37" path="res://脚本/shader/纸.gdshader" id="2_40rqy"]
+[ext_resource type="Texture2D" uid="uid://cohtrv6mwxixs" path="res://资源/美术/校园门口.png" id="3_j7q4d"]
+[ext_resource type="FontFile" uid="uid://86n2ylw4fv6" path="res://资源/字体/乐米栀夏浅风体.ttf" id="4_27e5h"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_paper"]
 shader = ExtResource("2_40rqy")
@@ -15,6 +17,22 @@ shader_parameter/breathe = 0.006
 shader_parameter/breathe_speed = 0.35
 shader_parameter/exposure = 1.0
 
+[sub_resource type="FontVariation" id="FontVariation_7v2rl"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_u4eia"]
+font = SubResource("FontVariation_7v2rl")
+font_size = 30
+font_color = Color(0, 0, 0, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u4eia"]
+
+[sub_resource type="Gradient" id="Gradient_j7q4d"]
+offsets = PackedFloat32Array(0.996997)
+colors = PackedColorArray(1, 1, 0.80784315, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_vkqoe"]
+gradient = SubResource("Gradient_j7q4d")
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_story"]
 content_margin_left = 18.0
 content_margin_top = 14.0
@@ -26,16 +44,29 @@ corner_radius_top_right = 12
 corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pool"]
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-bg_color = Color(0.13, 0.11, 0.09, 0.04)
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
+[sub_resource type="FontVariation" id="FontVariation_j82td"]
+base_font = ExtResource("4_27e5h")
+
+[sub_resource type="LabelSettings" id="LabelSettings_7v2rl"]
+font = SubResource("FontVariation_j82td")
+font_color = Color(0.4, 0.4, 0.4, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_27e5h"]
+font = ExtResource("4_27e5h")
+font_color = Color(0.6, 0.6, 0.6, 1)
+
+[sub_resource type="GDScript" id="GDScript_vkqoe"]
+resource_name = "打开或关闭纸面"
+script/source = "extends Button
+
+@onready var 纸面: TextureRect = $\"../../纸面\"
+
+func _on_pressed() -> void:
+	if 纸面.visible == true:
+		纸面.visible = false
+	else:
+		纸面.visible = true
+"
 
 [node name="Main" type="Control" unique_id=136839120]
 layout_mode = 3
@@ -76,11 +107,124 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="背景" type="TextureRect" parent="现场" unique_id=90387159]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -678.0
+offset_top = -379.00003
+offset_right = 1242.0
+offset_bottom = 701.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.7, 0.7)
+texture = ExtResource("3_j7q4d")
+
+[node name="幕次行" type="Label" parent="现场/背景" unique_id=262318807]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -25.0
+offset_top = 38.57147
+offset_right = 25.0
+offset_bottom = 61.57147
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.24, 0.21, 0.16, 1)
+theme_override_font_sizes/font_size = 16
+text = "第 1 幕"
+label_settings = SubResource("LabelSettings_u4eia")
+vertical_alignment = 1
+
+[node name="纸面" type="TextureRect" parent="现场" unique_id=1826660535]
+material = SubResource("ShaderMaterial_u4eia")
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -238.0
+offset_top = -318.0
+offset_right = 238.0
+offset_bottom = 318.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_vkqoe")
+
+[node name="中区" type="HBoxContainer" parent="现场/纸面" unique_id=2059259196]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 1.0
+offset_right = 821.0
+offset_bottom = 637.0
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="故事框" type="PanelContainer" parent="现场/纸面/中区" unique_id=539169148]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_story")
+
+[node name="故事列" type="VBoxContainer" parent="现场/纸面/中区/故事框" unique_id=1203468597]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="故事标签" type="Label" parent="现场/纸面/中区/故事框/故事列" unique_id=660341520]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
+theme_override_font_sizes/font_size = 13
+text = "故事从这里开始......"
+label_settings = SubResource("LabelSettings_7v2rl")
+
+[node name="滚动" type="ScrollContainer" parent="现场/纸面/中区/故事框/故事列" unique_id=345331831]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="句子区" type="VBoxContainer" parent="现场/纸面/中区/故事框/故事列/滚动" unique_id=331701758]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="故事空" type="Label" parent="现场/纸面/中区/故事框/故事列" unique_id=65008149]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.54, 0.5, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "（还没有人开口。）"
+label_settings = SubResource("LabelSettings_27e5h")
+
+[node name="嘴区" type="VBoxContainer" parent="现场/纸面/中区" unique_id=555953224]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MarginContainer" type="MarginContainer" parent="现场" unique_id=50938819]
+layout_mode = 0
+offset_left = 62.0
+offset_top = 601.0
+offset_right = 112.0
+offset_bottom = 676.0
+
+[node name="打开纸面" type="Button" parent="现场/MarginContainer" unique_id=1281736793]
+layout_mode = 2
+script = SubResource("GDScript_vkqoe")
+
 [node name="外" type="MarginContainer" parent="." unique_id=109100792]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 872.0
+offset_top = 650.0
+offset_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 28
@@ -92,115 +236,9 @@ theme_override_constants/margin_bottom = 18
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="顶栏" type="HBoxContainer" parent="外/主列" unique_id=1620756396]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="标题" type="Label" parent="外/主列/顶栏" unique_id=21604755]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
-theme_override_font_sizes/font_size = 14
-text = "口径 · 四个人各说一句，故事才长出来"
-vertical_alignment = 1
-
-[node name="弹簧" type="Control" parent="外/主列/顶栏" unique_id=995412286]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-
-[node name="幕次行" type="Label" parent="外/主列/顶栏" unique_id=262318807]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.24, 0.21, 0.16, 1)
-theme_override_font_sizes/font_size = 16
-text = "第 1 幕"
-vertical_alignment = 1
-
-[node name="遗忘行" type="Label" parent="外/主列/顶栏" unique_id=1670268075]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
-theme_override_font_sizes/font_size = 28
-text = "已遗忘 0"
-vertical_alignment = 1
-
-[node name="中区" type="HBoxContainer" parent="外/主列" unique_id=2059259196]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 16
-
-[node name="故事框" type="PanelContainer" parent="外/主列/中区" unique_id=539169148]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_story")
-
-[node name="故事列" type="VBoxContainer" parent="外/主列/中区/故事框" unique_id=1203468597]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="故事标签" type="Label" parent="外/主列/中区/故事框/故事列" unique_id=660341520]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
-theme_override_font_sizes/font_size = 13
-text = "故事"
-
-[node name="滚动" type="ScrollContainer" parent="外/主列/中区/故事框/故事列" unique_id=345331831]
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="句子区" type="VBoxContainer" parent="外/主列/中区/故事框/故事列/滚动" unique_id=331701758]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 14
-
-[node name="故事空" type="Label" parent="外/主列/中区/故事框/故事列" unique_id=65008149]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.54, 0.5, 0.42, 1)
-theme_override_font_sizes/font_size = 15
-text = "（还没有人开口。）"
-
-[node name="嘴区" type="VBoxContainer" parent="外/主列/中区" unique_id=555953224]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(330, 0)
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="遗忘框" type="PanelContainer" parent="外/主列" unique_id=1948626522]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_pool")
-
-[node name="遗忘列" type="VBoxContainer" parent="外/主列/遗忘框" unique_id=399725572]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="遗忘标签" type="Label" parent="外/主列/遗忘框/遗忘列" unique_id=623632828]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.38, 0.32, 1)
-theme_override_font_sizes/font_size = 13
-text = "这一幕听到的词 —— 点一个：说出口，或者拿它换掉故事里的一个词"
-
-[node name="遗忘词行" type="HBoxContainer" parent="外/主列/遗忘框/遗忘列" unique_id=1902416075]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 8
-
 [node name="操作栏" type="HBoxContainer" parent="外/主列" unique_id=527395686]
 layout_mode = 2
 theme_override_constants/separation = 14
-
-[node name="提示行" type="Label" parent="外/主列/操作栏" unique_id=667637508]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(0.28, 0.25, 0.2, 1)
-theme_override_font_sizes/font_size = 15
-text = "提示"
-vertical_alignment = 1
-autowrap_mode = 3
 
 [node name="说出口按钮" type="Button" parent="外/主列/操作栏" unique_id=1371596820]
 unique_name_in_owner = true
@@ -231,6 +269,7 @@ layout_mode = 2
 text = "下一幕 →"
 
 [node name="演出层" type="Control" parent="." unique_id=1077339254]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -238,3 +277,5 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[connection signal="pressed" from="现场/MarginContainer/打开纸面" to="现场/MarginContainer/打开纸面" method="_on_pressed"]
